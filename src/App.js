@@ -35,22 +35,50 @@ function App() {
 
   const fetchData = async () => {
     const { data, error } = await supabase
-      .from('contactos') // Cambia el nombre si usas otra tabla
-      .select('*'); // Obtiene todos los datos de la tabla
-
+      .from('contactos')
+      .select('*');
+  
     if (error) {
       console.error('Error fetching data:', error);
-    } else {
+      return null; // Retorna null si hay un error
+    }
+  
+    if (data && data.length > 0) {
       return data;
+    } else {
+      console.warn('No data available');
+      return null; // Retorna null si no hay datos
     }
   };
-
+  
   const convertToCSV = (data) => {
+    if (!data || data.length === 0) {
+      console.error('No data to convert');
+      return ''; // Devuelve un string vacío si no hay datos
+    }
+  
     const headers = Object.keys(data[0]).join(','); // Extrae las cabeceras
     const rows = data.map(row => Object.values(row).join(',')).join('\n'); // Convierte los datos en filas
     return `${headers}\n${rows}`;
   };
-
+  
+  const handleDownload = async () => {
+    const data = await fetchData(); // Obtiene los datos de la base de datos
+  
+    if (!data) {
+      alert('No hay datos disponibles para descargar.');
+      return; // Salir si no hay datos
+    }
+  
+    const csvData = convertToCSV(data); // Convierte los datos a CSV
+  
+    if (csvData) {
+      downloadCSV(csvData, 'respuestas_contactos.csv'); // Descarga el archivo si hay datos convertidos
+    } else {
+      alert('Error al convertir los datos a CSV.');
+    }
+  };
+  
   const downloadCSV = (csvData, filename) => {
     const blob = new Blob([csvData], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -61,14 +89,7 @@ function App() {
     a.click();
     document.body.removeChild(a);
   };
-
-  const handleDownload = async () => {
-    const data = await fetchData(); // Obtiene los datos de la base de datos
-    if (data) {
-      const csvData = convertToCSV(data); // Convierte los datos a CSV
-      downloadCSV(csvData, 'respuestas_contactos.csv'); // Descarga el archivo
-    }
-  };
+  
 
   return (
     <div>
