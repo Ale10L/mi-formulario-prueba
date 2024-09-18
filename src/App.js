@@ -33,6 +33,43 @@ function App() {
     setEnviando(false);
   };
 
+  const fetchData = async () => {
+    const { data, error } = await supabase
+      .from('contactos') // Cambia el nombre si usas otra tabla
+      .select('*'); // Obtiene todos los datos de la tabla
+
+    if (error) {
+      console.error('Error fetching data:', error);
+    } else {
+      return data;
+    }
+  };
+
+  const convertToCSV = (data) => {
+    const headers = Object.keys(data[0]).join(','); // Extrae las cabeceras
+    const rows = data.map(row => Object.values(row).join(',')).join('\n'); // Convierte los datos en filas
+    return `${headers}\n${rows}`;
+  };
+
+  const downloadCSV = (csvData, filename) => {
+    const blob = new Blob([csvData], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', filename);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleDownload = async () => {
+    const data = await fetchData(); // Obtiene los datos de la base de datos
+    if (data) {
+      const csvData = convertToCSV(data); // Convierte los datos a CSV
+      downloadCSV(csvData, 'respuestas_contactos.csv'); // Descarga el archivo
+    }
+  };
+
   return (
     <div>
       <h1>Formulario de Contacto</h1>
@@ -71,6 +108,10 @@ function App() {
           </button>
         </form>
       )}
+
+      <div>
+        <button onClick={handleDownload}>Descargar respuestas</button>
+      </div>
     </div>
   );
 }
